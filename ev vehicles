@@ -1,0 +1,28 @@
+# Sample data for EV vehicle costs
+ev_data = {
+    "model_a": {"cost": 30000},
+    "model_b": {"cost": 45000},
+    "model_c": {"cost": 35000}
+}
+
+def get_ev_cost(model):
+    """Returns the cost of the specified EV model."""
+    if model in ev_data:
+        return ev_data[model]["cost"]
+    else:
+        return None
+
+def main():
+    print("Welcome to the EV Vehicle Cost Calculator")
+    print("Available models: Model A, Model B, Model C")
+    model = input("Enter the EV model (model_a, model_b, model_c): ").strip().lower()
+
+    cost = get_ev_cost(model)
+    
+    if cost is not None:
+        print(f"The cost of {model.replace('_', ' ').title()} is ${cost}.")
+    else:
+        print("Model not found. Please check the available models and try again.")
+
+if __name__ == "__main__":
+    main()
