@@ -1,0 +1,75 @@
+from flask import Flask, render_template, request
+import pandas as pd
+
+app = Flask(__name__)
+
+# Load afforestation data
+def load_afforestation_data(file_path='afforestation_policies.csv'):
+    return pd.read_csv(file_path)
+
+# Get afforestation policy by state
+def get_policy_for_state(state, data):
+    policy = data[data['State'].str.lower() == state.lower()]
+    if not policy.empty:
+        return policy.iloc[0]
+    return None
+
+# Calculate land required for afforestation based on emission gap
+def calculate_land_needed(emission_gap, species_absorption_rate):
+    return emission_gap / species_absorption_rate
+
+# Mock AI suggestion function
+def generate_ai_suggestions(mine_type, emission_gap, policy_data):
+    suggestions = []
+
+    if mine_type == "underground":
+        suggestions.append("Adopt electric-powered machinery to reduce diesel emissions.")
+        suggestions.append("Implement methane capture systems to prevent greenhouse gas release.")
+    elif mine_type == "open_cast":
+        suggestions.append("Increase vegetation around the mine to improve carbon absorption.")
+        suggestions.append("Switch to solar-powered conveyor belts to reduce electricity use.")
+    
+    # Common suggestions
+    if emission_gap > 0:
+        suggestions.append("Consider purchasing carbon credits to offset the remaining emissions.")
+        suggestions.append("Explore renewable energy sources like solar or wind to reduce fossil fuel dependency.")
+        
+        # Suggest afforestation based on state policies
+        if policy_data is not None:
+            species_absorption_rate = 10  # Placeholder rate; this should be defined based on real data
+            land_needed = calculate_land_needed(emission_gap, species_absorption_rate)
+            suggestions.append(f"Based on the {policy_data['Policy Name']} policy, you may need approximately {land_needed:.2f} hectares of land for afforestation.")
+    
+    return suggestions
+
+@app.route('/', methods=['GET', 'POST'])
+def index():
+    # Load policy data
+    afforestation_data = load_afforestation_data()
+
+    if request.method == 'POST':
+        land_area = float(request.form['land_area'])
+        mine_type = request.form['mine_type']
+        emissions = float(request.form['emissions'])
+        state = request.form['state']
+
+        # Example: Simple absorption estimation
+        if mine_type == "underground":
+            absorption = land_area * 10  # Placeholder calculation
+        else:
+            absorption = land_area * 15  # Placeholder calculation
+
+        emission_gap = emissions - absorption
+
+        # Get policy for the state
+        policy_data = get_policy_for_state(state, afforestation_data)
+        suggestions = generate_ai_suggestions(mine_type, emission_gap, policy_data)
+
+        return render_template('index.html', land_area=land_area, mine_type=mine_type,
+                               emissions=emissions, absorption=absorption, 
+                               emission_gap=emission_gap, suggestions=suggestions)
+    else:
+        return render_template('index.html')
+
+if __name__ == '__main__':
+    app.run(debug=True)
