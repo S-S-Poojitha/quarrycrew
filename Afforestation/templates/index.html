@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carbon Footprint Calculator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        label {
+            display: block;
+            margin: 10px 0 5px;
+        }
+        input, select, button {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #28a745;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        .results {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #e9ecef;
+            border-radius: 8px;
+        }
+        p {
+            margin: 10px 0;
+            line-height: 1.6;
+        }
+        ul {
+            margin: 10px 0;
+            padding: 0;
+            list-style-type: none;
+        }
+        li {
+            background-color: #dff0d8;
+            padding: 10px;
+            margin-bottom: 5px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Carbon Footprint Calculator</h1>
+        <form action="/" method="POST">
+            <label for="land_area">Land Area (hectares):</label>
+            <input type="number" id="land_area" name="land_area" step="0.01" required>
+
+            <label for="mine_type">Mine Type:</label>
+            <select id="mine_type" name="mine_type" required>
+                <option value="underground">Underground</option>
+                <option value="open_cast">Open Cast</option>
+            </select>
+
+            <label for="emissions">Total Emissions (kg CO2):</label>
+            <input type="number" id="emissions" name="emissions" step="0.01" required>
+
+            <button type="submit">Calculate</button>
+        </form>
+
+        {% if land_area %}
+        <div class="results">
+            <h2>Results</h2>
+            <p><strong>Land Area:</strong> {{ land_area }} hectares</p>
+            <p><strong>Mine Type:</strong> {{ mine_type }}</p>
+            <p><strong>Total Emissions:</strong> {{ emissions }} kg CO2</p>
+            <p><strong>Carbon Absorption:</strong> {{ absorption }} kg CO2</p>
+            <p><strong>Emission Gap:</strong> {{ emission_gap }} kg CO2</p>
+
+            <h3>AI Suggestions for Carbon Neutrality</h3>
+            <ul>
+                {% for suggestion in suggestions %}
+                <li>{{ suggestion }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>

@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carbon Absorption & Emission Analysis</title>
+    <link rel="stylesheet" type="text/css" href="styles.css">
+</head>
+<body>
+    <h1>Carbon Absorption & Emission Analysis</h1>
+
+    <p><strong>Land Area:</strong> {{ land_area }} hectares</p>
+    <p><strong>Type of Mine:</strong> {{ mine_type }}</p>
+    <p><strong>Total Emissions:</strong> {{ emissions }} tons</p>
+    <p><strong>Estimated Carbon Absorption:</strong> {{ absorption }} tons/year</p>
+    <p><strong>Emission-Absorption Gap:</strong> {{ emission_gap }} tons/year</p>
+
+    <h2>AI-Generated Suggestions for Carbon Neutrality:</h2>
+    <ul>
+        {% for suggestion in suggestions %}
+            <li>{{ suggestion }}</li>
+        {% endfor %}
+    </ul>
+
+    <h3>Next Steps:</h3>
+    <p>Implement the suggested pathways and monitor your progress towards carbon neutrality.</p>
+</body>
+</html>
