@@ -1,18 +1,10 @@
 import sys
-import subprocess
-import winreg
+import pandas as pd
 import cv2
 import numpy as np
 from PIL import Image
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.common.by import By
-from webdriver_manager.chrome import ChromeDriverManager
+from playwright.sync_api import sync_playwright
 import io
-import pandas as pd
 
 # Constants for absorption rates and tree CO2 absorption
 GREEN_ABSORPTION_RATE = 22  # kg CO2 per m² per year for green areas
@@ -26,22 +18,6 @@ PIXEL_TO_METER_CONVERSION = 0.5  # 1 pixel = 0.5 meters (placeholder)
 # Load afforestation policies data from CSV
 def load_afforestation_policies(csv_file_path):
     return pd.read_csv(csv_file_path)
-
-# Function to find the path to Chrome on Windows
-def find_chrome_path_windows():
-    try:
-        reg_path = r"SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\chrome.exe"
-        with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, reg_path) as key:
-            return winreg.QueryValueEx(key, None)[0]
-    except FileNotFoundError:
-        return None
-
-# Function to get the Chrome browser path based on the operating system
-def get_chrome_path():
-    if sys.platform.startswith('win'):
-        return find_chrome_path_windows()
-    else:
-        return None
 
 # Function to analyze the image for green and blue areas
 def analyze_image(image_path):
@@ -131,33 +107,13 @@ def apply_afforestation_policy(state, emission_gap, policy_data):
 
 # Main function to run the image analysis and emission calculation
 def main():
-    # Get the path to Chrome
-    chrome_path = get_chrome_path()
+    # Load afforestation policy data
+    afforestation_data = load_afforestation_policies('afforestation_policies_indian_states.csv')
     
-    if not chrome_path:
-        print("Google Chrome is not installed or not found.")
-        return
-    
-    print(f"Using Chrome path: {chrome_path}")
-
-    # Set Chrome options for headless browsing and other optimizations
-    chrome_options = Options()
-    chrome_options.binary_location = chrome_path
-    chrome_options.add_argument("--disable-notifications")
-    chrome_options.add_argument("--disable-infobars")
-    chrome_options.add_argument("--disable-popup-blocking")
-    chrome_options.add_argument("--disable-extensions")
-    chrome_options.add_argument("--headless")  # Run in headless mode (no UI)
-    chrome_options.add_argument("--window-size=1920x1080")  # Set window size for screenshots
-    chrome_options.add_argument("--no-sandbox")  # Bypass OS security model
-    chrome_options.add_argument("--disable-gpu")  # Disable GPU hardware acceleration
-    
-    try:
-        # Load afforestation policy data
-        afforestation_data = load_afforestation_policies('afforestation_policies_indian_states.csv')
-        
-        # Initialize the Chrome WebDriver
-        driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
+    # Start Playwright and open a browser
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        page = browser.new_page()
         
         # Ask for the latitude and longitude inputs
         latitude = float(input("Enter the latitude: "))
@@ -165,21 +121,19 @@ def main():
         state = input("Enter the state: ")
         
         # Load the location in Google Maps
-        driver.get(f"https://www.google.com/maps/@{latitude},{longitude},10z/data=!5m1!1e4")
-
+        page.goto(f"https://www.google.com/maps/@{latitude},{longitude},10z/data=!5m1!1e4")
+        
         # Wait for the map to load
-        WebDriverWait(driver, 20).until(
-            EC.presence_of_element_located((By.XPATH, '//*[@id="searchboxinput"]'))
-        )
-
+        page.wait_for_selector('//*[@id="searchboxinput"]')
+        
         # Take a screenshot of the map
-        screenshot = driver.get_screenshot_as_png()
-
+        screenshot = page.screenshot(full_page=True)
+        
         # Save the screenshot as an image file
-        img = Image.open(io.BytesIO(screenshot))
         img_path = "screenshot.png"
-        img.save(img_path)
-
+        with open(img_path, "wb") as f:
+            f.write(screenshot)
+        
         # Analyze the screenshot for green and blue areas
         results = analyze_image(img_path)
         
@@ -202,14 +156,9 @@ def main():
         # Apply state-specific afforestation policy
         policy_recommendation = apply_afforestation_policy(state, sink_gap, afforestation_data)
         print(policy_recommendation)
-    
-    except Exception as e:
-        print(f"An error occurred: {e}")
-    
-    finally:
-        # Quit the Chrome driver if it was initialized
-        if 'driver' in locals():
-            driver.quit()
+
+        # Close the browser
+        browser.close()
 
 if __name__ == "__main__":
     main()
