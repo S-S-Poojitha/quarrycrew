@@ -1,16 +1,8 @@
 import sys
-import subprocess
-import winreg
 import cv2
 import numpy as np
 from PIL import Image
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.common.by import By
-from webdriver_manager.chrome import ChromeDriverManager
+from playwright.sync_api import sync_playwright
 import io
 
 GREEN_ABSORPTION_RATE = 22
@@ -20,20 +12,6 @@ TREE_CO2_MIN = 10
 TREE_CO2_MAX = 40
 
 PIXEL_TO_METER_CONVERSION = 0.5
-
-def find_chrome_path_windows():
-    try:
-        reg_path = r"SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\chrome.exe"
-        with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, reg_path) as key:
-            return winreg.QueryValueEx(key, None)[0]
-    except FileNotFoundError:
-        return None
-
-def get_chrome_path():
-    if sys.platform.startswith('win'):
-        return find_chrome_path_windows()
-    else:
-        return None
 
 def analyze_image(image_path):
     img = cv2.imread(image_path)
@@ -99,64 +77,49 @@ def analyze_image(image_path):
     }
 
 def main():
-    chrome_path = get_chrome_path()
-    
-    if not chrome_path:
-        print("Google Chrome is not installed or not found.")
-        return
-    
-    print(f"Using Chrome path: {chrome_path}")
-
-    chrome_options = Options()
-    chrome_options.binary_location = chrome_path
-    chrome_options.add_argument("--disable-notifications")
-    chrome_options.add_argument("--disable-infobars")
-    chrome_options.add_argument("--disable-popup-blocking")
-    chrome_options.add_argument("--disable-extensions")
-    chrome_options.add_argument("--headless")  # Run in headless mode (no UI)
-    chrome_options.add_argument("--window-size=1920x1080")  # Set window size for screenshots
-    chrome_options.add_argument("--no-sandbox")  # Bypass OS security model
-    chrome_options.add_argument("--disable-gpu")  # Disable GPU hardware acceleration
-    
-    try:
-        driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        page = browser.new_page()
         
+        # Ask for the latitude and longitude inputs
         latitude = float(input("Enter the latitude: "))
         longitude = float(input("Enter the longitude: "))
         
-        driver.get(f"https://www.google.com/maps/@{latitude},{longitude},10z/data=!5m1!1e4")
-
-        # Wait until the map loads completely
-        WebDriverWait(driver, 20).until(
-            EC.presence_of_element_located((By.XPATH, '//*[@id="searchboxinput"]'))
-        )
-
-        screenshot = driver.get_screenshot_as_png()
-
-        img = Image.open(io.BytesIO(screenshot))
+        # Load the location in Google Maps
+        page.goto(f"https://www.google.com/maps/@{latitude},{longitude},10z/data=!5m1!1e4")
+        
+        # Wait for the map to load
+        page.wait_for_selector('//*[@id="searchboxinput"]', timeout=20000)
+        
+        # Take a screenshot of the map
+        screenshot = page.screenshot(full_page=True)
+        
+        # Save the screenshot as an image file
         img_path = "screenshot.png"
-        img.save(img_path)
-
+        with open(img_path, "wb") as f:
+            f.write(screenshot)
+        
+        # Analyze the screenshot for green and blue areas
         results = analyze_image(img_path)
         
+        # Input the actual CO₂ emissions
         actual_emissions = float(input("Enter the actual CO₂ emissions (kg): "))
         
+        # Display results for total absorption and tree requirements
         print(f"Total CO₂ Absorption: {results['total_absorption']:.2f} kg")
         print(f"Trees Needed: {results['trees_needed_min']:.2f} - {results['trees_needed_max']:.2f}")
 
+        # Calculate the CO₂ sink gap (difference between emissions and absorption)
         sink_gap = actual_emissions - results['total_absorption']
         
+        # Print CO₂ sink gap analysis
         print(f"CO₂ Sink Gap Analysis:")
         print(f"Total CO₂ Emissions: {actual_emissions:.2f} kg")
         print(f"Total CO₂ Absorption: {results['total_absorption']:.2f} kg")
         print(f"CO₂ Sink Gap: {sink_gap:.2f} kg")
     
-    except Exception as e:
-        print(f"An error occurred: {e}")
-    
-    finally:
-        if 'driver' in locals():
-            driver.quit()
+        # Close the browser
+        browser.close()
 
 if __name__ == "__main__":
     main()
