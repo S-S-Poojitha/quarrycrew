@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emission Calculator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        h1 {
+            color: #333;
+        }
+        label {
+            display: block;
+            margin-top: 10px;
+        }
+        input, select, button {
+            margin-top: 5px;
+            padding: 10px;
+            font-size: 16px;
+            width: 100%;
+            max-width: 400px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #333;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #555;
+        }
+        .output {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #fff;
+            border: 1px solid #ddd;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Emission Calculator</h1>
+
+    <form action="/calculate" method="POST">
+        <label for="choice">Select calculation option:</label>
+        <select id="choice" name="choice">
+            <option value="1">Calculate emissions for all activities</option>
+            <option value="2">Calculate emissions for a specific activity</option>
+        </select>
+
+        <div id="option1">
+            <label for="mineType1">Enter mine type (underground/open-cast):</label>
+            <input type="text" id="mineType1" name="mineType1">
+
+            <label for="dieselUsage">Enter diesel usage (liters):</label>
+            <input type="number" id="dieselUsage" name="dieselUsage">
+
+            <label for="electricityConsumption">Enter electricity consumption (kWh):</label>
+            <input type="number" id="electricityConsumption" name="electricityConsumption">
+
+            <label for="methaneEmissions">Enter methane emissions (m³):</label>
+            <input type="number" id="methaneEmissions" name="methaneEmissions">
+
+            <label for="coalProduction">Enter coal production (tonnes):</label>
+            <input type="number" id="coalProduction" name="coalProduction">
+
+            <label for="transportationDistance">Enter transportation distance (km):</label>
+            <input type="number" id="transportationDistance" name="transportationDistance">
+
+            <label for="coalTransportationWeight">Enter coal transportation weight (tonnes):</label>
+            <input type="number" id="coalTransportationWeight" name="coalTransportationWeight">
+
+            <label for="numberOfWorkers">Enter number of workers:</label>
+            <input type="number" id="numberOfWorkers" name="numberOfWorkers">
+
+            <label for="workingHours">Enter total working hours:</label>
+            <input type="number" id="workingHours" name="workingHours">
+
+            <label for="carbonSequestrationRate">Enter carbon sequestration rate (kg CO2 per hectare per year):</label>
+            <input type="number" id="carbonSequestrationRate" name="carbonSequestrationRate">
+        </div>
+
+        <div id="option2" style="display:none;">
+            <label for="mineType2">Enter mine type (underground/open-cast):</label>
+            <input type="text" id="mineType2" name="mineType2">
+
+            <label for="activity">Enter activity (diesel, electricity, methane, coal, transportation):</label>
+            <input type="text" id="activity" name="activity">
+
+            <label for="amount">Enter amount for activity:</label>
+            <input type="number" id="amount" name="amount">
+
+            <label for="numberOfWorkers2">Enter number of workers:</label>
+            <input type="number" id="numberOfWorkers2" name="numberOfWorkers2">
+
+            <label for="workingHours2">Enter total working hours:</label>
+            <input type="number" id="workingHours2" name="workingHours2">
+        </div>
+
+        <button type="submit">Calculate</button>
+    </form>
+
+    <div id="output" class="output"></div>
+
+    <script>
+        document.getElementById('choice').addEventListener('change', function() {
+            var option1 = document.getElementById('option1');
+            var option2 = document.getElementById('option2');
+            if (this.value == '1') {
+                option1.style.display = 'block';
+                option2.style.display = 'none';
+            } else {
+                option1.style.display = 'none';
+                option2.style.display = 'block';
+            }
+        });
+    </script>
+
+</body>
+</html>
